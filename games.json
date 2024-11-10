@@ -1,0 +1,23 @@
+[
+    {
+        "id": 1,
+        "name": "Squad",
+        "description": "Opicanie",
+        "category": "Shooter",
+        "price": 299
+    },
+    {
+        "id": 2,
+        "name": "Far Cry 6",
+        "description": "Opicanie",
+        "category": "Shooter",
+        "price": 599
+    },
+    {
+        "id": 3,
+        "name": "Forza Horizon 5",
+        "description": "Opicanie",
+        "category": "Gonki",
+        "price": 1099
+    }
+]
