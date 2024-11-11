@@ -1,16 +1,16 @@
-import os
 import json
 import random
+import stripe
 import telebot
 from telebot import types
 
-TELEGRAM_TOKEN = "7009538379:AAEsfwZBY29puj9NSwi99aVvpDXn2k76vr4"
 
+TELEGRAM_TOKEN = "7009538379:AAEsfwZBY29puj9NSwi99aVvpDXn2k76vr4"
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
 
-if not os.path.exists("orders.json"):
-    with open("orders.json", "w") as file:
-        json.dump([], file)
+
+STRIPE_SECRET_KEY = "sk_test_51QK1REHbTTiVYZuSLXkEmPOXeaKxYZubA8hNUa4zPtGdGUsnDfp758FzEaCFc34R847Q9CgqYpISB5yO59iTGjZj00z8tPAfGn"
+stripe.api_key = STRIPE_SECRET_KEY
 
 game_keys = {
     1: ["KEY-A1", "KEY-A2", "KEY-A3", "KEY-A4", "KEY-A5"],
@@ -20,9 +20,17 @@ game_keys = {
 
 
 def initiate_payment(user_id, amount):
-    payment_id = f"PAY-{random.randint(1000, 9999)}"
-    payment_status = random.choice(["success", "failed"])
-    return payment_id, payment_status
+    try:
+        payment_intent = stripe.PaymentIntent.create(
+            amount=amount * 100,
+            currency="uah",
+            metadata={"user_id": user_id}
+        )
+
+        return payment_intent.id, "success"
+    except stripe.error.StripeError as e:
+        print(f"Error initiating payment: {e}")
+        return None, "failed"
 
 
 @bot.message_handler(commands=['start'])
@@ -66,8 +74,7 @@ def view_cart(message):
     with open("orders.json", "r") as file:
         orders = json.load(file)
 
-    user_orders = [order for order in orders if
-                   order['user_id'] == message.from_user.id and order['status'] == "in_cart"]
+    user_orders = [order for order in orders if order['user_id'] == message.from_user.id and order['status'] == "in_cart"]
     if user_orders:
         cart_message = "Ваш кошик:\n"
         total_price = 0
@@ -114,8 +121,7 @@ def checkout(call):
     total_price = sum(
         next(g['price'] for g in json.load(open('games.json')) if g['id'] == order['game_id']) for order in user_orders)
 
-    # Ініціалізуємо фіктивну оплату
-    payment_id, payment_status = initiate_payment(call.from_user.id, total_price)
+    payment_intent_id, payment_status = initiate_payment(call.from_user.id, total_price)
 
     if payment_status == "success":
         order_messages = []
